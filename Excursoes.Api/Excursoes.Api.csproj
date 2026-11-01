@@ -1,21 +1,26 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>811c0532-7085-42df-84ff-bb169a739c3e</UserSecretsId>
+    <UserSecretsId>excursoes-api-6f1c2b7e</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
+    <!-- SQL puro: o Dapper só transforma o resultado da consulta em objeto -->
+    <PackageReference Include="Dapper" Version="2.1.66" />
+    <!-- Driver do MySQL -->
+    <PackageReference Include="MySqlConnector" Version="2.4.0" />
+    <!-- Hash de senha -->
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <!-- Validação do token JWT -->
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.14" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.21">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Os testes podem usar os métodos "internal" dos models (ex.: DefinirId) -->
+    <InternalsVisibleTo Include="Excursoes.Tests" />
   </ItemGroup>
 
 </Project>

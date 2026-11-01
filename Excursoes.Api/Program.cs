@@ -1,23 +1,11 @@
-var builder = WebApplication.CreateBuilder(args);
+using Excursoes.Api.Configuracao;
 
-// Add services to the container.
+// Cada etapa está explicada em Configuracao/Inicializacao.cs e Configuracao/Seguranca.cs
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+Inicializacao.ConfigurarServicos(builder);
 
-builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
-
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
-
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
-
-app.MapControllers();
+WebApplication app = builder.Build();
+Inicializacao.ConfigurarPipeline(app);
+await Inicializacao.PrepararAsync(app);
 
 app.Run();

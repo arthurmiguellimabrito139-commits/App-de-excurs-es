@@ -3,6 +3,8 @@ using Excursoes.Api.Models;
 
 namespace Excursoes.Api.Strategies.Pagamento;
 
+// Parte comum a todas as formas de pagamento.
+// Cada filha só implementa o CalcularTotal: é o padrão Template Method junto com o Strategy.
 public abstract class PagamentoStrategyBase : IPagamentoStrategy
 {
     public abstract string Metodo { get; }
@@ -34,7 +36,7 @@ public abstract class PagamentoStrategyBase : IPagamentoStrategy
         decimal valorParcela = Math.Floor(total / numParcelas * 100) / 100;
         decimal valorUltima = total - valorParcela * (numParcelas - 1);
 
-        DateOnly hoje = DateOnly.FromDateTime(DateTime.Today);
+        DateOnly hoje = DateOnly.FromDateTime(DateTime.UtcNow);
         List<ParcelaCalculada> parcelas = new List<ParcelaCalculada>();
 
         for (int numero = 1; numero <= numParcelas; numero++)

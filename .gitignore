@@ -480,3 +480,13 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# ===== Excursões =====
+# Fotos enviadas pelos usuários não vão para o Git
+Excursoes.Api/wwwroot/uploads/*
+!Excursoes.Api/wwwroot/uploads/.gitkeep
+
+# Front-end
+frontend/node_modules/
+frontend/dist/
+frontend/.env

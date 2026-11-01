@@ -3,11 +3,9 @@ using Excursoes.Api.Strategies.Pagamento;
 
 namespace Excursoes.Api.Models;
 
-public class Compra
+public class Compra : Entidade
 {
-    private readonly List<Parcela> _parcelas = new();
-
-    public int Id { get; private set; }
+    private readonly List<Parcela> _parcelas = new List<Parcela>();
 
     public int PassageiroId { get; private set; }
     public Passageiro Passageiro { get; private set; } = null!;
@@ -25,13 +23,15 @@ public class Compra
         get { return _parcelas; }
     }
 
-    // Compra cancelada não conta como vaga ocupada
+    // Compra cancelada não ocupa vaga
     public bool Ativa
     {
         get { return Status != StatusCompra.Cancelado; }
     }
 
-    private Compra() { } // EF Core
+    private Compra()
+    {
+    }
 
     // internal: só a Viagem.Vender cria compra
     internal Compra(Passageiro passageiro, Viagem viagem, string metodo,
@@ -51,15 +51,14 @@ public class Compra
         decimal total = 0;
         foreach (ParcelaCalculada calculada in parcelasCalculadas)
         {
-            Parcela parcela = new Parcela(calculada.Numero, calculada.Valor, calculada.Vencimento);
-            _parcelas.Add(parcela);
+            _parcelas.Add(new Parcela(calculada.Numero, calculada.Valor, calculada.Vencimento));
             total = total + calculada.Valor;
         }
         ValorTotal = total;
     }
 
     // Paga uma parcela, sempre na ordem (1ª, 2ª, 3ª...)
-    public void PagarParcela(int parcelaId)
+    public Parcela PagarParcela(int parcelaId)
     {
         if (Status == StatusCompra.Cancelado)
             throw new RegraNegocioException("Esta compra foi cancelada.");
@@ -76,6 +75,8 @@ public class Compra
 
         if (TodasPagas())
             Status = StatusCompra.Pago;
+
+        return parcela;
     }
 
     public void Cancelar()
@@ -85,7 +86,12 @@ public class Compra
         Status = StatusCompra.Cancelado;
     }
 
-    // ---------- Informações para o painel e "minhas compras" ----------
+    public bool PertenceA(int passageiroId)
+    {
+        return PassageiroId == passageiroId;
+    }
+
+    // ---------- Informações para as telas ----------
     public int ParcelasPagas()
     {
         int quantidade = 0;
@@ -108,12 +114,24 @@ public class Compra
         return soma;
     }
 
-    public bool PertenceA(int passageiroId)
+    // ---------- Carregamento vindo do banco ----------
+    internal void CarregarParcelas(IEnumerable<Parcela> parcelas)
     {
-        return PassageiroId == passageiroId;
+        _parcelas.Clear();
+        _parcelas.AddRange(parcelas);
     }
 
-    // ---------- Auxiliares privados ----------
+    internal void CarregarViagem(Viagem viagem)
+    {
+        Viagem = viagem;
+    }
+
+    internal void CarregarPassageiro(Passageiro passageiro)
+    {
+        Passageiro = passageiro;
+    }
+
+    // ---------- Auxiliares ----------
     private Parcela? BuscarParcela(int parcelaId)
     {
         foreach (Parcela parcela in _parcelas)

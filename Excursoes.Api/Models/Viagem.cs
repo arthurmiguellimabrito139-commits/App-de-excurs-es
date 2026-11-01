@@ -1,20 +1,16 @@
-
 using Excursoes.Api.Excecoes;
 using Excursoes.Api.Strategies.Pagamento;
 
 namespace Excursoes.Api.Models;
 
-public class Viagem
+public class Viagem : Entidade
 {
     public const int MaxImagens = 10;
 
-    private readonly List<ViagemImagem> _imagens = new();
-    private readonly List<Compra> _compras = new();
+    private readonly List<ViagemImagem> _imagens = new List<ViagemImagem>();
+    private readonly List<Compra> _compras = new List<Compra>();
 
-    public int Id { get; private set; }
     public int AdminId { get; private set; }
-    public Admin Admin { get; private set; } = null!;
-
     public string Titulo { get; private set; } = "";
     public string Destino { get; private set; } = "";
     public string Descricao { get; private set; } = "";
@@ -27,37 +23,53 @@ public class Viagem
     // Muda a cada alteração; se duas compras salvarem ao mesmo tempo, uma é recusada
     public Guid Versao { get; private set; }
 
-    public IReadOnlyCollection<ViagemImagem> Imagens => _imagens;
-    public IReadOnlyCollection<Compra> Compras => _compras;
+    public IReadOnlyCollection<ViagemImagem> Imagens
+    {
+        get { return _imagens; }
+    }
 
-    private Viagem() { } // EF Core
+    public IReadOnlyCollection<Compra> Compras
+    {
+        get { return _compras; }
+    }
+
+    private Viagem()
+    {
+    }
 
     // internal: só o Admin.PublicarViagem cria viagem
     internal Viagem(Admin admin, DadosViagem dados)
     {
-        Admin = admin;
         AdminId = admin.Id;
         Atualizar(dados);
     }
 
     public void Atualizar(DadosViagem dados)
     {
-        var titulo = dados.Titulo?.Trim() ?? "";
-        var destino = dados.Destino?.Trim() ?? "";
+        string titulo = Limpar(dados.Titulo);
+        string destino = Limpar(dados.Destino);
+        string descricao = Limpar(dados.Descricao);
 
-        if (titulo.Length is < 3 or > 150) throw new RegraNegocioException("O título deve ter entre 3 e 150 caracteres.");
-        if (destino.Length is < 2 or > 150) throw new RegraNegocioException("Informe o destino.");
-        if ((dados.Descricao?.Length ?? 0) > 4000) throw new RegraNegocioException("Descrição muito longa.");
-        if (dados.DataRetorno < dados.DataSaida) throw new RegraNegocioException("A volta não pode ser antes da ida.");
-        if (dados.Valor <= 0) throw new RegraNegocioException("O valor deve ser maior que zero.");
-        if (dados.MaxParcelas is < 1 or > 12) throw new RegraNegocioException("Parcelas máximas entre 1 e 12.");
-        if (dados.Vagas < 1) throw new RegraNegocioException("Informe pelo menos 1 vaga.");
+        if (titulo.Length < 3 || titulo.Length > 150)
+            throw new RegraNegocioException("O título deve ter entre 3 e 150 caracteres.");
+        if (destino.Length < 2 || destino.Length > 150)
+            throw new RegraNegocioException("Informe o destino.");
+        if (descricao.Length > 4000)
+            throw new RegraNegocioException("Descrição muito longa (máximo 4000 caracteres).");
+        if (dados.DataRetorno < dados.DataSaida)
+            throw new RegraNegocioException("A volta não pode ser antes da ida.");
+        if (dados.Valor <= 0)
+            throw new RegraNegocioException("O valor deve ser maior que zero.");
+        if (dados.MaxParcelas < 1 || dados.MaxParcelas > 12)
+            throw new RegraNegocioException("Parcelas máximas entre 1 e 12.");
+        if (dados.Vagas < 1)
+            throw new RegraNegocioException("Informe pelo menos 1 vaga.");
         if (dados.Vagas < VagasVendidas)
-            throw new RegraNegocioException($"Já existem {VagasVendidas} passagens vendidas.");
+            throw new RegraNegocioException("Já existem " + VagasVendidas + " passagens vendidas; as vagas não podem ser menores que isso.");
 
         Titulo = titulo;
         Destino = destino;
-        Descricao = dados.Descricao?.Trim() ?? "";
+        Descricao = descricao;
         DataSaida = dados.DataSaida;
         DataRetorno = dados.DataRetorno;
         Valor = Math.Round(dados.Valor, 2);
@@ -70,29 +82,88 @@ public class Viagem
     public void AdicionarImagem(string url)
     {
         if (_imagens.Count >= MaxImagens)
-            throw new RegraNegocioException($"Máximo de {MaxImagens} imagens por viagem.");
+            throw new RegraNegocioException("Máximo de " + MaxImagens + " imagens por viagem.");
         _imagens.Add(new ViagemImagem(url));
     }
 
-    public void RemoverImagem(int imagemId) =>
-        _imagens.RemoveAll(i => i.Id == imagemId);
+    // Devolve o endereço da imagem removida (para apagar o arquivo) ou null se não existia
+    public string? RemoverImagem(int imagemId)
+    {
+        for (int i = 0; i < _imagens.Count; i++)
+        {
+            if (_imagens[i].Id == imagemId)
+            {
+                string url = _imagens[i].Url;
+                _imagens.RemoveAt(i);
+                return url;
+            }
+        }
+        return null;
+    }
 
     // ---------- Vagas e venda ----------
-    public int VagasVendidas => _compras.Count(c => c.Ativa);
-    public int VagasDisponiveis => Vagas - VagasVendidas;
-    public bool PodeExcluir => VagasVendidas == 0;
-    public bool EstaAVenda(DateOnly hoje) => VagasDisponiveis > 0 && DataSaida >= hoje;
+    public int VagasVendidas
+    {
+        get
+        {
+            int quantidade = 0;
+            foreach (Compra compra in _compras)
+            {
+                if (compra.Ativa)
+                    quantidade++;
+            }
+            return quantidade;
+        }
+    }
+
+    public int VagasDisponiveis
+    {
+        get { return Vagas - VagasVendidas; }
+    }
+
+    public bool PodeExcluir
+    {
+        get { return VagasVendidas == 0; }
+    }
+
+    public bool EstaAVenda(DateOnly hoje)
+    {
+        return VagasDisponiveis > 0 && DataSaida >= hoje;
+    }
 
     // Quem decide se dá para vender é a viagem; quem calcula as parcelas é a strategy
     internal Compra Vender(Passageiro passageiro, IPagamentoStrategy strategy, int numParcelas)
     {
-        if (!EstaAVenda(DateOnly.FromDateTime(DateTime.Today)))
-            throw new RegraNegocioException("Esta viagem não está mais à venda.");
+        DateOnly hoje = DateOnly.FromDateTime(DateTime.UtcNow);
+        if (VagasDisponiveis <= 0)
+            throw new RegraNegocioException("Viagem esgotada.");
+        if (DataSaida < hoje)
+            throw new RegraNegocioException("Esta viagem já saiu.");
 
-        var parcelas = strategy.Calcular(this, numParcelas);
-        var compra = new Compra(passageiro, this, strategy.Metodo, parcelas);
+        IReadOnlyList<ParcelaCalculada> parcelas = strategy.Calcular(this, numParcelas);
+        Compra compra = new Compra(passageiro, this, strategy.Metodo, parcelas);
         _compras.Add(compra);
         Versao = Guid.NewGuid();
         return compra;
+    }
+
+    // ---------- Carregamento vindo do banco ----------
+    internal void CarregarImagens(IEnumerable<ViagemImagem> imagens)
+    {
+        _imagens.Clear();
+        _imagens.AddRange(imagens);
+    }
+
+    internal void CarregarCompras(IEnumerable<Compra> compras)
+    {
+        _compras.Clear();
+        _compras.AddRange(compras);
+    }
+
+    private static string Limpar(string? texto)
+    {
+        if (texto == null)
+            return "";
+        return texto.Trim();
     }
 }

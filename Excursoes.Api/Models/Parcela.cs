@@ -2,9 +2,8 @@ using Excursoes.Api.Excecoes;
 
 namespace Excursoes.Api.Models;
 
-public class Parcela
+public class Parcela : Entidade
 {
-    public int Id { get; private set; }
     public int CompraId { get; private set; }
     public int Numero { get; private set; }
     public decimal Valor { get; private set; }
@@ -12,7 +11,9 @@ public class Parcela
     public bool Paga { get; private set; }
     public DateTime? PagoEm { get; private set; }   // null enquanto não for paga
 
-    private Parcela() { } // EF Core
+    private Parcela()
+    {
+    }
 
     internal Parcela(int numero, decimal valor, DateOnly vencimento)
     {

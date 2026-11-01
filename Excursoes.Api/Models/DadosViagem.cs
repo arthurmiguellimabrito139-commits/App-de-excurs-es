@@ -1,11 +1,27 @@
 namespace Excursoes.Api.Models;
 
-public record DadosViagem(
-    string Titulo,
-    string Destino,
-    string Descricao,
-    DateOnly DataSaida,
-    DateOnly DataRetorno,
-    decimal Valor,
-    int Vagas,
-    int MaxParcelas);
+// Os campos de uma viagem juntos num objeto só (serve para criar e editar)
+public class DadosViagem
+{
+    public string Titulo { get; }
+    public string Destino { get; }
+    public string Descricao { get; }
+    public DateOnly DataSaida { get; }
+    public DateOnly DataRetorno { get; }
+    public decimal Valor { get; }
+    public int Vagas { get; }
+    public int MaxParcelas { get; }
+
+    public DadosViagem(string titulo, string destino, string descricao, DateOnly dataSaida,
+                       DateOnly dataRetorno, decimal valor, int vagas, int maxParcelas)
+    {
+        Titulo = titulo;
+        Destino = destino;
+        Descricao = descricao;
+        DataSaida = dataSaida;
+        DataRetorno = dataRetorno;
+        Valor = valor;
+        Vagas = vagas;
+        MaxParcelas = maxParcelas;
+    }
+}

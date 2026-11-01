@@ -4,23 +4,24 @@ namespace Excursoes.Api.Models;
 
 public class Admin : Usuario
 {
-    // Lista privada; de fora só dá para LER (ninguém faz admin.Viagens.Clear())
-    private readonly List<Viagem> _viagens = new();
-    public IReadOnlyCollection<Viagem> Viagens => _viagens;
+    public override string Papel
+    {
+        get { return "Admin"; }
+    }
 
-    public override string Papel => "Admin";
-
-    private Admin() { } // EF Core
+    private Admin()
+    {
+    }
 
     public Admin(string nome, string email, string senhaHash)
-        : base(nome, email, senhaHash) { }
+        : base(nome, email, senhaHash)
+    {
+    }
 
     // Só um admin cria viagem, e ela já nasce ligada a ele
     public Viagem PublicarViagem(DadosViagem dados)
     {
-        var viagem = new Viagem(this, dados);
-        _viagens.Add(viagem);
-        return viagem;
+        return new Viagem(this, dados);
     }
 
     public void EditarViagem(Viagem viagem, DadosViagem dados)
@@ -37,7 +38,15 @@ public class Admin : Usuario
             throw new RegraNegocioException("Não é possível excluir: já existem passagens vendidas.");
     }
 
-    public bool EhDono(Viagem viagem) => viagem.AdminId == Id;
+    public void AutorizarVerPassageiros(Viagem viagem)
+    {
+        GarantirQueEhDono(viagem);
+    }
+
+    public bool EhDono(Viagem viagem)
+    {
+        return viagem.AdminId == Id;
+    }
 
     // Viagem de outro admin responde "não encontrada" (404), não "proibido" (403),
     // para não confirmar que ela existe

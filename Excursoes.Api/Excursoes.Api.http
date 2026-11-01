@@ -1,6 +1,0 @@
-@Excursoes.Api_HostAddress = http://localhost:5002
-
-GET {{Excursoes.Api_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###

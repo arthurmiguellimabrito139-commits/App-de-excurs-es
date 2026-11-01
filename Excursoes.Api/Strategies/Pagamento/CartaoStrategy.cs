@@ -21,7 +21,8 @@ public class CartaoStrategy : PagamentoStrategyBase
         if (numParcelas <= ParcelasSemJuros)
             return valor;
 
-        // Juros compostos: valor × 1,025 elevado ao número de parcelas
+        // Juros compostos: valor x 1,025 elevado ao número de parcelas.
+        // Feito com "for" porque Math.Pow só trabalha com double, que erra centavos.
         decimal total = valor;
         for (int i = 0; i < numParcelas; i++)
         {

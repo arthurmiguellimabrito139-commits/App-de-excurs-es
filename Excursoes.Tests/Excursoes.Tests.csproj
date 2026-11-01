@@ -15,11 +15,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Using Include="Xunit" />
+    <ProjectReference Include="..\Excursoes.Api\Excursoes.Api.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Excursoes.Api\Excursoes.Api.csproj" />
+    <Using Include="Xunit" />
   </ItemGroup>
 
 </Project>

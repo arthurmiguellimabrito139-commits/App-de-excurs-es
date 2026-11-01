@@ -1,5 +1,6 @@
 namespace Excursoes.Api.Strategies.Pagamento;
 
+// Resultado do cálculo de uma strategy: ainda NÃO é uma Parcela do banco
 public class ParcelaCalculada
 {
     public int Numero { get; }
